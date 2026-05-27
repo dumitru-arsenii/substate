@@ -1,0 +1,57 @@
+{
+  "name": "@substate/react",
+  "version": "0.0.1",
+  "description": "React bindings for Substate stores.",
+  "keywords": [
+    "state",
+    "react",
+    "rxjs",
+    "typescript",
+    "substate"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dumitru-arsenii/substate.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/dumitru-arsenii/substate#readme",
+  "bugs": {
+    "url": "https://github.com/dumitru-arsenii/substate/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "dependencies": {
+    "@substate/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0"
+  },
+  "scripts": {
+    "build": "tsup --config ../../tsup.config.ts",
+    "clean": "rimraf dist",
+    "dev": "tsup --config ../../tsup.config.ts --watch",
+    "test": "vitest run --root ../.. packages/react/test",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

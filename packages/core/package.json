@@ -1,0 +1,50 @@
+{
+  "name": "@substate/core",
+  "version": "0.0.1",
+  "description": "Reactive dependency-driven state primitives for Substate.",
+  "keywords": [
+    "state",
+    "reactive",
+    "rxjs",
+    "typescript",
+    "substate"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dumitru-arsenii/substate.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/dumitru-arsenii/substate#readme",
+  "bugs": {
+    "url": "https://github.com/dumitru-arsenii/substate/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "dependencies": {
+    "rxjs": "^7.8.1"
+  },
+  "scripts": {
+    "build": "tsup --config ../../tsup.config.ts",
+    "clean": "rimraf dist",
+    "dev": "tsup --config ../../tsup.config.ts --watch",
+    "test": "vitest run --root ../.. packages/core/test",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

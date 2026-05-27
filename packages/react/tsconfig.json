@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "paths": {
+      "@substate/core": ["../core/src/index.ts"]
+    }
+  },
+  "include": ["src", "test"]
+}
