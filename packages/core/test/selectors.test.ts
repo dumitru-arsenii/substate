@@ -1,5 +1,5 @@
 import { firstValueFrom } from "rxjs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createStore,
   createSubStore,
@@ -76,13 +76,16 @@ describe("substate selectors", () => {
   });
 
   it("re-resolves seeded selectors when dependencies change", async () => {
+    const handler = vi.fn(
+      async ({ setValue }: { setValue: { value: number } }) => ({
+        data: setValue.value * 2,
+      }),
+    );
     const users = createSubStore({}, (builder) => {
       const setValue = builder.mutation(
         async (args: { value: number }) => args,
       );
-      const doubled = builder
-        .withDependencies({ setValue })
-        .selector(async ({ setValue }) => ({ data: setValue.value * 2 }));
+      const doubled = builder.withDependencies({ setValue }).selector(handler);
       return { setValue, doubled };
     });
 
@@ -105,6 +108,7 @@ describe("substate selectors", () => {
       success: true,
       data: { data: 4 },
     });
+    expect(handler).not.toHaveBeenCalled();
 
     await setValue.run({ value: 6 });
     await store.whenIdle();
@@ -114,8 +118,78 @@ describe("substate selectors", () => {
       success: true,
       data: { data: 12 },
     });
+    expect(handler).toHaveBeenCalledTimes(1);
 
     subscription.unsubscribe();
+  });
+
+  it("does not resolve seeded selectors from subscription before dependencies change", async () => {
+    const handler = vi.fn(
+      async ({ setValue }: { setValue: { value: number } }) => ({
+        data: setValue.value * 2,
+      }),
+    );
+    const users = createSubStore({}, (builder) => {
+      const setValue = builder.mutation(
+        async (args: { value: number }) => args,
+      );
+      const doubled = builder.withDependencies({ setValue }).selector(handler);
+      return { setValue, doubled };
+    });
+
+    const store = createStore(
+      { users },
+      {
+        users: {
+          setValue: { value: 2 },
+          doubled: { data: 4 },
+        },
+      },
+    );
+    const doubled = store.users.doubled();
+
+    const subscription = doubled.stream().subscribe();
+    await store.whenIdle();
+
+    expect(doubled.latest()).toMatchObject({
+      ready: true,
+      success: true,
+      data: { data: 4 },
+    });
+    expect(handler).not.toHaveBeenCalled();
+
+    subscription.unsubscribe();
+  });
+
+  it("resolves seeded selectors when manually triggered", async () => {
+    const handler = vi.fn(
+      async ({ setValue }: { setValue: { value: number } }) => ({
+        data: setValue.value * 2,
+      }),
+    );
+    const users = createSubStore({}, (builder) => {
+      const setValue = builder.mutation(
+        async (args: { value: number }) => args,
+      );
+      const doubled = builder.withDependencies({ setValue }).selector(handler);
+      return { setValue, doubled };
+    });
+
+    const store = createStore(
+      { users },
+      {
+        users: {
+          setValue: { value: 2 },
+          doubled: { data: 4 },
+        },
+      },
+    );
+    const doubled = store.users.doubled();
+
+    const resolved = await doubled.resolve();
+
+    expect(resolved).toMatchObject({ data: 4 });
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 
   it("exposes latest results and data-only pipe", async () => {
@@ -155,8 +229,9 @@ describe("substate selectors", () => {
   });
 
   it("seeds selectors from snapshots", async () => {
+    const handler = vi.fn(async () => ({ data: 2 }));
     const storeDef = createSubStore({}, (builder) => {
-      const value = builder.selector(async () => ({ data: 2 }));
+      const value = builder.selector(handler);
       return { value };
     });
 
@@ -181,5 +256,6 @@ describe("substate selectors", () => {
     expect(store.getSnapshot()?.storeDef?.value).toMatchObject({
       data: 2,
     });
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,4 +1,4 @@
-import { BehaviorSubject, defer, Observable, shareReplay } from "rxjs";
+import { BehaviorSubject, defer, Observable, shareReplay, skip } from "rxjs";
 import type { Subscriber, Subscription } from "rxjs";
 import { listenSubstateDependencies } from "./dependencies";
 import {
@@ -55,9 +55,11 @@ export function createSubstateSelectorFlow<T extends SubstateData>(
 
           dependenciesSubscription = listenSubstateDependencies(
             context.dependencies,
-          ).subscribe(() => {
-            void resolve().catch(() => {});
-          });
+          )
+            .pipe(skip(1))
+            .subscribe(() => {
+              void resolve().catch(() => {});
+            });
 
           return () => {
             subscription.unsubscribe();

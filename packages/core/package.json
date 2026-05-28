@@ -1,6 +1,6 @@
 {
   "name": "@substate/core",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Reactive dependency-driven state primitives for Substate.",
   "keywords": [
     "state",
