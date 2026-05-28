@@ -1,17 +1,15 @@
-import { setCascadeLogLevel } from "./logger";
 import { createTracker } from "./tracker";
 import type {
-  CascadeLogLevel,
-  CascadeStore,
-  CascadeStoreSnapshot,
-  CascadeStoreSubStoresInitializers,
+  SubstateStore,
+  SubstateStoreSnapshot,
+  SubstateStoreSubStoresInitializers,
 } from "./types";
 import { sortDepsInOrder } from "./utils";
 
-export function createCascadeStore<
-  S extends CascadeStoreSubStoresInitializers,
-  T extends CascadeStoreSnapshot<S>,
->(substores: S, initialData?: T): CascadeStore<S> {
+export function createStore<
+  S extends SubstateStoreSubStoresInitializers,
+  T extends SubstateStoreSnapshot<S>,
+>(substores: S, initialData?: T): SubstateStore<S> {
   const tracker = createTracker(initialData || ({} as any));
   const storeDeps = Object.entries(substores).map(([substoreKey, substore]) => {
     return {
@@ -41,7 +39,6 @@ export function createCascadeStore<
       isPending: () => tracker.isPending(),
       whenIdle: () => tracker.whenIdle(),
       getSnapshot: () => tracker.getSnapshot(),
-      setLogLevel: (level: CascadeLogLevel) => setCascadeLogLevel(level),
     },
-  ) as CascadeStore<S>;
+  ) as SubstateStore<S>;
 }

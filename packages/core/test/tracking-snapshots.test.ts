@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createCascadeStore, createCascadeSubStore } from "../src/index";
+import { createStore, createSubStore } from "../src/index";
 
-describe("cascade tracking and snapshots", () => {
+describe("substate tracking and snapshots", () => {
   it("records mutation invocations", async () => {
-    const storeDef = createCascadeSubStore({}, (builder) => {
+    const storeDef = createSubStore({}, (builder) => {
       const mut = builder.mutation(async (args: { value: number }) => ({
         data: args.value + 1,
       }));
       return { mut };
     });
 
-    const store = createCascadeStore({ storeDef });
+    const store = createStore({ storeDef });
 
     store.storeDef.mut().run({ value: 1 });
 
@@ -20,13 +20,13 @@ describe("cascade tracking and snapshots", () => {
   });
 
   it("updates snapshots after successful runs", async () => {
-    const storeDef = createCascadeSubStore({}, (builder) => {
+    const storeDef = createSubStore({}, (builder) => {
       const sel = builder.selector(async () => ({ data: "ready" }));
       const mut = builder.mutation(async () => ({ data: "done" }));
       return { sel, mut };
     });
 
-    const store = createCascadeStore({ storeDef });
+    const store = createStore({ storeDef });
     await store.storeDef.sel().resolve();
     await store.storeDef.mut().run({});
 

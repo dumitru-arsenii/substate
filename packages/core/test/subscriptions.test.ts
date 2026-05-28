@@ -1,14 +1,14 @@
 import { Observable, firstValueFrom } from "rxjs";
 import { describe, expect, it } from "vitest";
 import {
-  createCascadeStore,
-  createCascadeSubStore,
-  type CascadeSuccessResult,
+  createStore,
+  createSubStore,
+  type SubstateSuccessResult,
 } from "../src/index";
 
-describe("cascade subscriptions", () => {
+describe("substate subscriptions", () => {
   it("tracks invocation after first emission", async () => {
-    const feeds = createCascadeSubStore({}, (builder) => {
+    const feeds = createSubStore({}, (builder) => {
       const stream = builder.subscription((args: { start: number }) => {
         return new Observable<{ data: number }>((subscriber) => {
           subscriber.next({ data: args.start });
@@ -18,7 +18,7 @@ describe("cascade subscriptions", () => {
       return { stream };
     });
 
-    const store = createCascadeStore({ feeds });
+    const store = createStore({ feeds });
     const stream = store.feeds.stream();
 
     const first = firstValueFrom(stream.watch({ start: 2 }));
@@ -30,7 +30,7 @@ describe("cascade subscriptions", () => {
   });
 
   it("captures errors as results", async () => {
-    const feeds = createCascadeSubStore({}, (builder) => {
+    const feeds = createSubStore({}, (builder) => {
       const stream = builder.subscription(() => {
         return new Observable<{ data: number }>((subscriber) => {
           subscriber.error(new Error("nope"));
@@ -39,7 +39,7 @@ describe("cascade subscriptions", () => {
       return { stream };
     });
 
-    const store = createCascadeStore({ feeds });
+    const store = createStore({ feeds });
     const stream = store.feeds.stream();
 
     stream.watch({});
@@ -54,7 +54,7 @@ describe("cascade subscriptions", () => {
 
   it("switches streams when args change", async () => {
     const subscribersArgs: number[] = [];
-    const feeds = createCascadeSubStore({}, (builder) => {
+    const feeds = createSubStore({}, (builder) => {
       const stream = builder.subscription((args: { start: number }) => {
         return new Observable<{ data: number }>((subscriber) => {
           subscribersArgs.push(args.start);
@@ -64,7 +64,7 @@ describe("cascade subscriptions", () => {
       return { stream };
     });
 
-    const store = createCascadeStore({ feeds });
+    const store = createStore({ feeds });
     const stream = store.feeds.stream();
 
     stream.watch({ start: 1 });
@@ -74,9 +74,9 @@ describe("cascade subscriptions", () => {
     stream.watch({ start: 10 });
     const third = await firstValueFrom(stream.stream());
 
-    const firstResult = first as CascadeSuccessResult<{ data: number }>;
-    const secondResult = second as CascadeSuccessResult<{ data: number }>;
-    const thirdResult = third as CascadeSuccessResult<{ data: number }>;
+    const firstResult = first as SubstateSuccessResult<{ data: number }>;
+    const secondResult = second as SubstateSuccessResult<{ data: number }>;
+    const thirdResult = third as SubstateSuccessResult<{ data: number }>;
 
     expect(subscribersArgs).toEqual([1, 5, 10]);
     expect(firstResult.data).toMatchObject({ data: 1 });

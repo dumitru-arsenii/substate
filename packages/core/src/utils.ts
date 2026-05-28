@@ -1,36 +1,36 @@
 import { filter, firstValueFrom, map, Observable } from "rxjs";
 import type {
-  CascadeArgs,
-  CascadeData,
-  CascadeResult,
-  CascadeSuccessResult,
+  SubstateArgs,
+  SubstateData,
+  SubstateResult,
+  SubstateSuccessResult,
 } from "./types";
 
-export function getArgsKey(args: CascadeArgs): string {
+export function getArgsKey(args: SubstateArgs): string {
   return JSON.stringify(args);
 }
 
-export function filterCascadeSuccessResult<T extends CascadeData>(
-  strea: Observable<CascadeResult<T>>,
-): Observable<CascadeSuccessResult<T>> {
+export function filterSubstateSuccessResult<T extends SubstateData>(
+  strea: Observable<SubstateResult<T>>,
+): Observable<SubstateSuccessResult<T>> {
   return strea.pipe(
     filter(
-      (result): result is CascadeSuccessResult<T> =>
+      (result): result is SubstateSuccessResult<T> =>
         result.ready && result.success,
     ),
   );
 }
 
-export function filterCascadeSuccessAndMapToData<T extends CascadeData>(
-  strea: Observable<CascadeResult<T>>,
+export function filterSubstateSuccessAndMapToData<T extends SubstateData>(
+  strea: Observable<SubstateResult<T>>,
 ): Observable<T> {
-  return filterCascadeSuccessResult(strea).pipe(map((result) => result.data));
+  return filterSubstateSuccessResult(strea).pipe(map((result) => result.data));
 }
 
-export function takeFirstCascadeSuccessData<T extends CascadeData>(
-  strea: Observable<CascadeResult<T>>,
+export function takeFirstSubstateSuccessData<T extends SubstateData>(
+  strea: Observable<SubstateResult<T>>,
 ): Promise<T> {
-  return firstValueFrom(filterCascadeSuccessAndMapToData(strea));
+  return firstValueFrom(filterSubstateSuccessAndMapToData(strea));
 }
 
 type DepsTree = {

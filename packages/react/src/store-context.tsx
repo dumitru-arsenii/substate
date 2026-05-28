@@ -1,10 +1,10 @@
 import type {
-  CascadeArgs,
-  CascadeData,
-  CascadeMutation,
-  CascadeResult,
-  CascadeSelector,
-  CascadeSubscription,
+  SubstateArgs,
+  SubstateData,
+  SubstateMutation,
+  SubstateResult,
+  SubstateSelector,
+  SubstateSubscription,
 } from "@substate/core";
 import {
   createContext,
@@ -16,28 +16,28 @@ import {
 } from "react";
 
 export type SubstateFlow<
-  TData extends CascadeData,
-  TArgs extends CascadeArgs = CascadeArgs,
+  TData extends SubstateData,
+  TArgs extends SubstateArgs = SubstateArgs,
 > =
-  | CascadeSelector<TData>
-  | CascadeMutation<TData, TArgs>
-  | CascadeSubscription<TData, TArgs>;
+  | SubstateSelector<TData>
+  | SubstateMutation<TData, TArgs>
+  | SubstateSubscription<TData, TArgs>;
 
 export type SubstateFlowData<TFlow> =
-  TFlow extends CascadeSelector<infer TData>
+  TFlow extends SubstateSelector<infer TData>
     ? TData
-    : TFlow extends CascadeMutation<infer TData, CascadeArgs>
+    : TFlow extends SubstateMutation<infer TData, SubstateArgs>
       ? TData
-      : TFlow extends CascadeSubscription<infer TData, CascadeArgs>
+      : TFlow extends SubstateSubscription<infer TData, SubstateArgs>
         ? TData
         : never;
 
 export type SubstateFlowFetch<TFlow> =
-  TFlow extends CascadeSelector<infer TData>
+  TFlow extends SubstateSelector<infer TData>
     ? () => Promise<TData>
-    : TFlow extends CascadeMutation<infer TData, infer TArgs>
+    : TFlow extends SubstateMutation<infer TData, infer TArgs>
       ? (args: TArgs) => Promise<TData>
-      : TFlow extends CascadeSubscription<infer TData, infer TArgs>
+      : TFlow extends SubstateSubscription<infer TData, infer TArgs>
         ? (args: TArgs) => Promise<TData>
         : never;
 
@@ -48,7 +48,7 @@ export type SubstateHookStatus = {
   error: unknown | undefined;
 };
 
-export type SubstateHookState<TData extends CascadeData> = {
+export type SubstateHookState<TData extends SubstateData> = {
   data: TData | undefined;
   status: SubstateHookStatus;
 };
@@ -66,19 +66,19 @@ export type SubstateReactProviderProps<TStore> = {
   children: ReactNode;
 };
 
-type SubstateSubscription = {
+type StreamSubscription = {
   unsubscribe(): void;
 };
 
-type SubstateDataStream<TData extends CascadeData> = {
+type SubstateDataStream<TData extends SubstateData> = {
   subscribe(observer: {
     next(data: TData): void;
     error(error: unknown): void;
-  }): SubstateSubscription;
+  }): StreamSubscription;
 };
 
-type SubstateResultStream<TData extends CascadeData> = {
-  subscribe(next: (result: CascadeResult<TData>) => void): SubstateSubscription;
+type SubstateResultStream<TData extends SubstateData> = {
+  subscribe(next: (result: SubstateResult<TData>) => void): StreamSubscription;
 };
 
 const idleStatus: SubstateHookStatus = {
@@ -88,8 +88,8 @@ const idleStatus: SubstateHookStatus = {
   error: undefined,
 };
 
-function getSnapshot<TData extends CascadeData>(
-  result: CascadeResult<TData>,
+function getSnapshot<TData extends SubstateData>(
+  result: SubstateResult<TData>,
 ): SubstateHookState<TData> {
   if (!result.ready) {
     return {
@@ -121,7 +121,7 @@ function getSnapshot<TData extends CascadeData>(
   };
 }
 
-function fetchFlow<TData extends CascadeData, TArgs extends CascadeArgs>(
+function fetchFlow<TData extends SubstateData, TArgs extends SubstateArgs>(
   flow: SubstateFlow<TData, TArgs>,
   args: TArgs | undefined,
 ): Promise<TData> {
@@ -134,7 +134,7 @@ function fetchFlow<TData extends CascadeData, TArgs extends CascadeArgs>(
   }
 
   return new Promise<TData>((resolve, reject) => {
-    const subscriptionRef: { current: SubstateSubscription | undefined } = {
+    const subscriptionRef: { current: StreamSubscription | undefined } = {
       current: undefined,
     };
     let shouldUnsubscribe = false;
@@ -175,16 +175,16 @@ export function createSubstateReact<TStore>() {
     );
   }
 
-  function useState<TData extends CascadeData>(
-    selector: SubstateFlowSelector<TStore, CascadeSelector<TData>>,
-  ): SubstateHookResult<CascadeSelector<TData>>;
-  function useState<TData extends CascadeData, TArgs extends CascadeArgs>(
-    selector: SubstateFlowSelector<TStore, CascadeMutation<TData, TArgs>>,
-  ): SubstateHookResult<CascadeMutation<TData, TArgs>>;
-  function useState<TData extends CascadeData, TArgs extends CascadeArgs>(
-    selector: SubstateFlowSelector<TStore, CascadeSubscription<TData, TArgs>>,
-  ): SubstateHookResult<CascadeSubscription<TData, TArgs>>;
-  function useState<TFlow extends SubstateFlow<CascadeData, CascadeArgs>>(
+  function useState<TData extends SubstateData>(
+    selector: SubstateFlowSelector<TStore, SubstateSelector<TData>>,
+  ): SubstateHookResult<SubstateSelector<TData>>;
+  function useState<TData extends SubstateData, TArgs extends SubstateArgs>(
+    selector: SubstateFlowSelector<TStore, SubstateMutation<TData, TArgs>>,
+  ): SubstateHookResult<SubstateMutation<TData, TArgs>>;
+  function useState<TData extends SubstateData, TArgs extends SubstateArgs>(
+    selector: SubstateFlowSelector<TStore, SubstateSubscription<TData, TArgs>>,
+  ): SubstateHookResult<SubstateSubscription<TData, TArgs>>;
+  function useState<TFlow extends SubstateFlow<SubstateData, SubstateArgs>>(
     selector: SubstateFlowSelector<TStore, TFlow>,
   ): SubstateHookResult<TFlow> {
     const store = useContext(StoreContext);
@@ -203,7 +203,7 @@ export function createSubstateReact<TStore>() {
     );
 
     useEffect(() => {
-      const applyResult = (result: CascadeResult<SubstateFlowData<TFlow>>) => {
+      const applyResult = (result: SubstateResult<SubstateFlowData<TFlow>>) => {
         const next = getSnapshot(result);
 
         setData(next.data);
@@ -213,7 +213,7 @@ export function createSubstateReact<TStore>() {
         }));
       };
 
-      applyResult(flow.latest() as CascadeResult<SubstateFlowData<TFlow>>);
+      applyResult(flow.latest() as SubstateResult<SubstateFlowData<TFlow>>);
 
       const stream = flow.stream() as SubstateResultStream<
         SubstateFlowData<TFlow>
@@ -226,7 +226,7 @@ export function createSubstateReact<TStore>() {
     }, [flow]);
 
     const fetch = useCallback(
-      async (args?: CascadeArgs) => {
+      async (args?: SubstateArgs) => {
         setStatus((current) => ({
           ...current,
           fetching: true,
@@ -234,7 +234,7 @@ export function createSubstateReact<TStore>() {
 
         try {
           const result = await fetchFlow(
-            flow as SubstateFlow<SubstateFlowData<TFlow>, CascadeArgs>,
+            flow as SubstateFlow<SubstateFlowData<TFlow>, SubstateArgs>,
             args,
           );
 

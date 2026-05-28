@@ -1,23 +1,23 @@
 import { Observable } from "rxjs";
-import type { CascadeData, CascadeTracker } from "./types";
+import type { SubstateData, SubstateTracker } from "./types";
 
 export function createTracker(
-  initialData: Record<string, Record<string, CascadeData>>,
-): CascadeTracker {
+  initialData: Record<string, Record<string, SubstateData>>,
+): SubstateTracker {
   const pendingPromises = new Set<Promise<void>>();
   const snapshot = { ...initialData };
 
   const applyDumpData = (
     substoreKey: string,
     flowKey: string,
-    data: CascadeData,
+    data: SubstateData,
     argsKey?: string,
   ) => {
     if (argsKey) {
       (
         ((snapshot[substoreKey] ??= {})[flowKey] ??= {}) as Record<
           string,
-          CascadeData
+          SubstateData
         >
       )[argsKey] = data;
     } else {

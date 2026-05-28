@@ -1,12 +1,12 @@
 import { firstValueFrom } from "rxjs";
 import { describe, expect, it } from "vitest";
-import { createCascadeStore, createCascadeSubStore } from "../src/index";
-import type { CascadeStoreSnapshot } from "../src/types";
+import { createStore, createSubStore } from "../src/index";
+import type { SubstateStoreSnapshot } from "../src/types";
 import { getArgsKey } from "../src/utils";
 
-describe("cascade isolated selectors", () => {
+describe("substate isolated selectors", () => {
   it("seeds from snapshots and memoizes flows", async () => {
-    const catalog = createCascadeSubStore({}, (builder) => {
+    const catalog = createSubStore({}, (builder) => {
       const byId = builder.isolated(async (args: { id: number }) => ({
         id: args.id,
         name: "Live",
@@ -16,7 +16,7 @@ describe("cascade isolated selectors", () => {
 
     const argsKey = getArgsKey({ id: 1 });
     const ss = { catalog };
-    const snapshot: CascadeStoreSnapshot<typeof ss> = {
+    const snapshot: SubstateStoreSnapshot<typeof ss> = {
       catalog: {
         byId: {
           [argsKey]: {
@@ -27,7 +27,7 @@ describe("cascade isolated selectors", () => {
       },
     };
 
-    const store = createCascadeStore({ catalog }, snapshot);
+    const store = createStore({ catalog }, snapshot);
     const flow1 = store.catalog.byId({ id: 1 });
     const flow2 = store.catalog.byId({ id: 1 });
 
@@ -63,14 +63,14 @@ describe("cascade isolated selectors", () => {
   });
 
   it("tracks resolve invocations with argsKey", async () => {
-    const catalog = createCascadeSubStore({}, (builder) => {
+    const catalog = createSubStore({}, (builder) => {
       const byId = builder.isolated(async (args: { id: number }) => ({
         id: args.id,
       }));
       return { byId };
     });
 
-    const store = createCascadeStore({ catalog });
+    const store = createStore({ catalog });
     const flow = store.catalog.byId({ id: 2 });
 
     flow.resolve();
@@ -81,7 +81,7 @@ describe("cascade isolated selectors", () => {
   });
 
   it("isolated selectors depend on cross-substore flows", async () => {
-    const users = createCascadeSubStore({}, (builder) => {
+    const users = createSubStore({}, (builder) => {
       const setUser = builder.mutation(
         async (args: { id: number; name: string }) => args,
       );
@@ -91,7 +91,7 @@ describe("cascade isolated selectors", () => {
       return { setUser, current };
     });
 
-    const profiles = createCascadeSubStore({ users }, (builder, deps) => {
+    const profiles = createSubStore({ users }, (builder, deps) => {
       const byId = builder
         .withDependencies({ user: deps.users.current })
         .isolated(async (args: { id: number }, { user }) => {
@@ -102,7 +102,7 @@ describe("cascade isolated selectors", () => {
       return { byId };
     });
 
-    const store = createCascadeStore({ users, profiles });
+    const store = createStore({ users, profiles });
     await store.users.setUser().run({ id: 7, name: "Ada" });
 
     const flow = store.profiles.byId({ id: 7 });

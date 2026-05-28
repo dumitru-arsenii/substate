@@ -1,59 +1,57 @@
 import type { Observable } from "rxjs";
-import { createCascadeInitializer } from "./initializer";
-import { createCascadeMutationFlow } from "./mutation.flow";
-import { createCascadeSelectorFlow } from "./selector.flow";
-import { createCascadeSubscriptionFlow } from "./subscription.flow";
+import { createSubstateInitializer } from "./initializer";
+import { createSubstateMutationFlow } from "./mutation.flow";
+import { createSubstateSelectorFlow } from "./selector.flow";
+import { createSubstateSubscriptionFlow } from "./subscription.flow";
 import type {
-  CascadeArgs,
-  CascadeBaseFlowContext,
-  CascadeBuilderWithDependencies,
-  CascadeCleanBuilder,
-  CascadeData,
-  CascadeFlowInitializerContext,
-  CascadeIsolatedInitializer,
-  CascadeMutation,
-  CascadeMutationInitializer,
-  CascadeSelector,
-  CascadeSelectorInitializer,
-  CascadeSubscription,
-  CascadeSubscriptionInitializer,
-  CascadeSubStore,
-  CascadeSubStoreSnapshot,
-  CascadeSubStoreSnapshotUnsafe,
+  SubstateArgs,
+  SubstateBaseFlowContext,
+  SubstateBuilderWithDependencies,
+  SubstateCleanBuilder,
+  SubstateData,
+  SubstateFlowInitializerContext,
+  SubstateIsolatedInitializer,
+  SubstateMutation,
+  SubstateMutationInitializer,
+  SubstateSelector,
+  SubstateSelectorInitializer,
+  SubstateSubscription,
+  SubstateSubscriptionInitializer,
+  SubstateSubStore,
+  SubstateSubStoreSnapshot,
+  SubstateSubStoreSnapshotUnsafe,
 } from "./types";
-import { createCascadeLogger } from "./logger";
 import {
-  castCascadeDependenciesToData,
-  getCascadeDependencies,
-  getCascadeDependenciesUnsafe,
-  resolveCascadeDependencies,
+  castSubstateDependenciesToData,
+  getSubstateDependencies,
+  getSubstateDependenciesUnsafe,
+  resolveSubstateDependencies,
 } from "./dependencies";
 import { getArgsKey } from "./utils";
 
-export function createCascadeCleanBuilder(): CascadeCleanBuilder {
-  const createBaseFlowContext = <T extends CascadeData>(
-    context: CascadeFlowInitializerContext<T>,
-  ): CascadeBaseFlowContext<T> => {
+export function createSubstateCleanBuilder(): SubstateCleanBuilder {
+  const createBaseFlowContext = <T extends SubstateData>(
+    context: SubstateFlowInitializerContext<T>,
+  ): SubstateBaseFlowContext<T> => {
     return {
       dependencies: {},
       filterFn: () => true,
       initialData: context.initialData,
       substoreKey: context.substoreKey,
       flowKey: context.flowKey,
-      logger: createCascadeLogger(`${context.substoreKey}.${context.flowKey}`),
     };
   };
 
   return {
     withDependencies(dependencies) {
-      return createCascadeBuilderWithDependencies(dependencies);
+      return createSubstateBuilderWithDependencies(dependencies);
     },
-    selector<T extends CascadeData>(handler: () => T | Promise<T>) {
-      let flow: CascadeSelector<T>;
-      return createCascadeInitializer(
+    selector<T extends SubstateData>(handler: () => T | Promise<T>) {
+      let flow: SubstateSelector<T>;
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          flow = createCascadeSelectorFlow({
+          flow = createSubstateSelectorFlow({
             ...createBaseFlowContext(context),
             handler: context.tracker.wrapExecution(
               async () => handler(),
@@ -62,17 +60,17 @@ export function createCascadeCleanBuilder(): CascadeCleanBuilder {
             ),
           });
         },
-      ) as CascadeSelectorInitializer<T>;
+      ) as SubstateSelectorInitializer<T>;
     },
-    mutation<T extends CascadeData, A extends CascadeArgs>(
+    mutation<T extends SubstateData, A extends SubstateArgs>(
       handler: (args: A) => T | Promise<T>,
     ) {
-      let flow: CascadeMutation<T, A>;
+      let flow: SubstateMutation<T, A>;
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          flow = createCascadeMutationFlow({
+          flow = createSubstateMutationFlow({
             ...createBaseFlowContext(context),
             handler: context.tracker.wrapExecution(
               async (args: A) => handler(args),
@@ -81,17 +79,17 @@ export function createCascadeCleanBuilder(): CascadeCleanBuilder {
             ),
           });
         },
-      ) as CascadeMutationInitializer<T, A>;
+      ) as SubstateMutationInitializer<T, A>;
     },
-    subscription<T extends CascadeData, A extends CascadeArgs>(
+    subscription<T extends SubstateData, A extends SubstateArgs>(
       handler: (args: A) => Observable<T>,
     ) {
-      let flow: CascadeSubscription<T, A>;
+      let flow: SubstateSubscription<T, A>;
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          flow = createCascadeSubscriptionFlow({
+          flow = createSubstateSubscriptionFlow({
             ...createBaseFlowContext(context),
             handler: context.tracker.wrapExecution(
               handler,
@@ -100,26 +98,25 @@ export function createCascadeCleanBuilder(): CascadeCleanBuilder {
             ),
           });
         },
-      ) as CascadeSubscriptionInitializer<T, A>;
+      ) as SubstateSubscriptionInitializer<T, A>;
     },
-    isolated<T extends CascadeData, A extends CascadeArgs>(
+    isolated<T extends SubstateData, A extends SubstateArgs>(
       handler: (args: A) => T | Promise<T>,
     ) {
-      let ctx: CascadeFlowInitializerContext<CascadeData>;
-      const selectorsMap = new Map<string, CascadeSelector<CascadeData>>();
+      let ctx: SubstateFlowInitializerContext<SubstateData>;
+      const selectorsMap = new Map<string, SubstateSelector<SubstateData>>();
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         (args: A) => {
           const argsKey = getArgsKey(args);
 
           if (!selectorsMap.has(argsKey)) {
-            const { logger, initialData, ...rest } = createBaseFlowContext(ctx);
+            const { initialData, ...rest } = createBaseFlowContext(ctx);
             selectorsMap.set(
               argsKey,
-              createCascadeSelectorFlow({
+              createSubstateSelectorFlow({
                 ...rest,
-                logger,
-                initialData: (initialData as Record<string, CascadeData>)?.[
+                initialData: (initialData as Record<string, SubstateData>)?.[
                   argsKey
                 ],
                 handler: ctx.tracker.wrapExecution(
@@ -137,61 +134,58 @@ export function createCascadeCleanBuilder(): CascadeCleanBuilder {
         (context) => {
           ctx = context;
         },
-      ) as CascadeIsolatedInitializer<T, A>;
+      ) as SubstateIsolatedInitializer<T, A>;
     },
   };
 }
 
-export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
+export function createSubstateBuilderWithDependencies<
+  D extends SubstateSubStore,
+>(
   dependencies: D,
   filterFns: ((
-    dependencies: CascadeSubStoreSnapshotUnsafe<D>,
+    dependencies: SubstateSubStoreSnapshotUnsafe<D>,
   ) => boolean)[] = [],
-): CascadeBuilderWithDependencies<D> {
+): SubstateBuilderWithDependencies<D> {
   const allDependenciesReady = (
-    dependencies: CascadeSubStoreSnapshotUnsafe<D>,
+    dependencies: SubstateSubStoreSnapshotUnsafe<D>,
   ) => {
     return Object.values(dependencies).every((dep) => dep.ready && dep.success);
   };
 
-  const createBaseFlowContext = <T extends CascadeData>(
-    context: CascadeFlowInitializerContext<T>,
+  const createBaseFlowContext = <T extends SubstateData>(
+    context: SubstateFlowInitializerContext<T>,
     additionalFilterFn?: (
-      dependencies: CascadeSubStoreSnapshotUnsafe<D>,
+      dependencies: SubstateSubStoreSnapshotUnsafe<D>,
     ) => boolean,
-  ): CascadeBaseFlowContext<T> => {
-    const logger = createCascadeLogger(
-      `${context.substoreKey}.${context.flowKey}`,
-    );
+  ): SubstateBaseFlowContext<T> => {
     return {
       dependencies,
       filterFn: () => {
         try {
-          const deps = getCascadeDependenciesUnsafe(dependencies);
+          const deps = getSubstateDependenciesUnsafe(dependencies);
 
           return [
             ...filterFns,
             additionalFilterFn ? additionalFilterFn : () => true,
           ].every((fn) => fn(deps));
-        } catch (error) {
-          logger.error("filterFn error", error);
+        } catch {
           return false;
         }
       },
       initialData: context.initialData,
       substoreKey: context.substoreKey,
       flowKey: context.flowKey,
-      logger,
     };
   };
 
   return {
     when(filterFn) {
-      return createCascadeBuilderWithDependencies(dependencies, [
+      return createSubstateBuilderWithDependencies(dependencies, [
         ...filterFns,
         (dependencies) => {
           try {
-            return filterFn(castCascadeDependenciesToData(dependencies));
+            return filterFn(castSubstateDependenciesToData(dependencies));
           } catch (error) {
             return false;
           }
@@ -199,29 +193,23 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
       ]);
     },
     whenUnsafe(filterFn) {
-      return createCascadeBuilderWithDependencies(dependencies, [
+      return createSubstateBuilderWithDependencies(dependencies, [
         ...filterFns,
         filterFn,
       ]);
     },
-    selector<T extends CascadeData>(
-      handler: (dependencies: CascadeSubStoreSnapshot<D>) => T | Promise<T>,
+    selector<T extends SubstateData>(
+      handler: (dependencies: SubstateSubStoreSnapshot<D>) => T | Promise<T>,
     ) {
-      let flow: CascadeSelector<T>;
-      return createCascadeInitializer(
+      let flow: SubstateSelector<T>;
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          const { logger, ...rest } = createBaseFlowContext(
-            context,
-            allDependenciesReady,
-          );
-          flow = createCascadeSelectorFlow({
+          const rest = createBaseFlowContext(context, allDependenciesReady);
+          flow = createSubstateSelectorFlow({
             ...rest,
-            logger,
             handler: async () => {
-              const deps = getCascadeDependencies(dependencies);
-
-              logger.debug("dependencies", deps);
+              const deps = getSubstateDependencies(dependencies);
 
               return context.tracker.wrapExecution(
                 handler,
@@ -231,25 +219,22 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
             },
           });
         },
-      ) as CascadeSelectorInitializer<T>;
+      ) as SubstateSelectorInitializer<T>;
     },
-    selectorUnsafe<T extends CascadeData>(
+    selectorUnsafe<T extends SubstateData>(
       handler: (
-        dependencies: CascadeSubStoreSnapshotUnsafe<D>,
+        dependencies: SubstateSubStoreSnapshotUnsafe<D>,
       ) => T | Promise<T>,
     ) {
-      let flow: CascadeSelector<T>;
-      return createCascadeInitializer(
+      let flow: SubstateSelector<T>;
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          const { logger, ...rest } = createBaseFlowContext(context);
-          flow = createCascadeSelectorFlow({
+          const rest = createBaseFlowContext(context);
+          flow = createSubstateSelectorFlow({
             ...rest,
-            logger,
             handler: async () => {
-              const deps = getCascadeDependenciesUnsafe(dependencies);
-
-              logger.debug("dependencies", deps);
+              const deps = getSubstateDependenciesUnsafe(dependencies);
 
               return context.tracker.wrapExecution(
                 handler,
@@ -259,30 +244,24 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
             },
           });
         },
-      ) as CascadeSelectorInitializer<T>;
+      ) as SubstateSelectorInitializer<T>;
     },
-    mutation<T extends CascadeData, A extends CascadeArgs>(
+    mutation<T extends SubstateData, A extends SubstateArgs>(
       handler: (
         args: A,
-        dependencies: CascadeSubStoreSnapshot<D>,
+        dependencies: SubstateSubStoreSnapshot<D>,
       ) => T | Promise<T>,
     ) {
-      let flow: CascadeMutation<T, A>;
+      let flow: SubstateMutation<T, A>;
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          const { logger, ...rest } = createBaseFlowContext(
-            context,
-            allDependenciesReady,
-          );
-          flow = createCascadeMutationFlow({
+          const rest = createBaseFlowContext(context, allDependenciesReady);
+          flow = createSubstateMutationFlow({
             ...rest,
-            logger,
             handler: async (args: A) => {
-              const deps = getCascadeDependencies(dependencies);
-
-              logger.debug("dependencies", deps);
+              const deps = getSubstateDependencies(dependencies);
 
               return context.tracker.wrapExecution(
                 handler,
@@ -292,27 +271,24 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
             },
           });
         },
-      ) as CascadeMutationInitializer<T, A>;
+      ) as SubstateMutationInitializer<T, A>;
     },
-    mutationUnsafe<T extends CascadeData, A extends CascadeArgs>(
+    mutationUnsafe<T extends SubstateData, A extends SubstateArgs>(
       handler: (
         args: A,
-        dependencies: CascadeSubStoreSnapshotUnsafe<D>,
+        dependencies: SubstateSubStoreSnapshotUnsafe<D>,
       ) => T | Promise<T>,
     ) {
-      let flow: CascadeMutation<T, A>;
+      let flow: SubstateMutation<T, A>;
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          const { logger, ...rest } = createBaseFlowContext(context);
-          flow = createCascadeMutationFlow({
+          const rest = createBaseFlowContext(context);
+          flow = createSubstateMutationFlow({
             ...rest,
-            logger,
             handler: async (args: A) => {
-              const deps = getCascadeDependenciesUnsafe(dependencies);
-
-              logger.debug("dependencies", deps);
+              const deps = getSubstateDependenciesUnsafe(dependencies);
 
               return context.tracker.wrapExecution(
                 handler,
@@ -322,30 +298,24 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
             },
           });
         },
-      ) as CascadeMutationInitializer<T, A>;
+      ) as SubstateMutationInitializer<T, A>;
     },
-    subscription<T extends CascadeData, A extends CascadeArgs>(
+    subscription<T extends SubstateData, A extends SubstateArgs>(
       handler: (
         args: A,
-        dependencies: CascadeSubStoreSnapshot<D>,
+        dependencies: SubstateSubStoreSnapshot<D>,
       ) => Observable<T>,
     ) {
-      let flow: CascadeSubscription<T, A>;
+      let flow: SubstateSubscription<T, A>;
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          const { logger, ...rest } = createBaseFlowContext(
-            context,
-            allDependenciesReady,
-          );
-          flow = createCascadeSubscriptionFlow({
+          const rest = createBaseFlowContext(context, allDependenciesReady);
+          flow = createSubstateSubscriptionFlow({
             ...rest,
-            logger,
             handler: (args: A) => {
-              const deps = getCascadeDependencies(dependencies);
-
-              logger.debug("dependencies", deps);
+              const deps = getSubstateDependencies(dependencies);
 
               return context.tracker.wrapExecution(
                 handler,
@@ -355,30 +325,24 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
             },
           });
         },
-      ) as CascadeSubscriptionInitializer<T, A>;
+      ) as SubstateSubscriptionInitializer<T, A>;
     },
-    subscriptionUnsafe<T extends CascadeData, A extends CascadeArgs>(
+    subscriptionUnsafe<T extends SubstateData, A extends SubstateArgs>(
       handler: (
         args: A,
-        dependencies: CascadeSubStoreSnapshotUnsafe<D>,
+        dependencies: SubstateSubStoreSnapshotUnsafe<D>,
       ) => Observable<T>,
     ) {
-      let flow: CascadeSubscription<T, A>;
+      let flow: SubstateSubscription<T, A>;
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         () => flow!,
         (context) => {
-          const { logger, ...rest } = createBaseFlowContext(
-            context,
-            allDependenciesReady,
-          );
-          flow = createCascadeSubscriptionFlow({
+          const rest = createBaseFlowContext(context, allDependenciesReady);
+          flow = createSubstateSubscriptionFlow({
             ...rest,
-            logger,
             handler: (args: A) => {
-              const deps = getCascadeDependenciesUnsafe(dependencies);
-
-              logger.debug("dependencies", deps);
+              const deps = getSubstateDependenciesUnsafe(dependencies);
 
               return context.tracker.wrapExecution(
                 handler,
@@ -388,37 +352,34 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
             },
           });
         },
-      ) as CascadeSubscriptionInitializer<T, A>;
+      ) as SubstateSubscriptionInitializer<T, A>;
     },
-    isolated<T extends CascadeData, A extends CascadeArgs>(
+    isolated<T extends SubstateData, A extends SubstateArgs>(
       handler: (
         args: A,
-        dependencies: CascadeSubStoreSnapshot<D>,
+        dependencies: SubstateSubStoreSnapshot<D>,
       ) => T | Promise<T>,
     ) {
-      let ctx: CascadeFlowInitializerContext<CascadeData>;
-      const selectorsMap = new Map<string, CascadeSelector<CascadeData>>();
+      let ctx: SubstateFlowInitializerContext<SubstateData>;
+      const selectorsMap = new Map<string, SubstateSelector<SubstateData>>();
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         (args: A) => {
           const argsKey = getArgsKey(args);
 
           if (!selectorsMap.has(argsKey)) {
-            const { logger, initialData, ...rest } = createBaseFlowContext(ctx);
+            const { initialData, ...rest } = createBaseFlowContext(ctx);
             selectorsMap.set(
               argsKey,
-              createCascadeSelectorFlow({
+              createSubstateSelectorFlow({
                 ...rest,
-                logger,
-                initialData: (initialData as Record<string, CascadeData>)?.[
+                initialData: (initialData as Record<string, SubstateData>)?.[
                   argsKey
                 ],
                 handler: async () => {
-                  await resolveCascadeDependencies(dependencies);
+                  await resolveSubstateDependencies(dependencies);
 
-                  const deps = getCascadeDependencies(dependencies);
-
-                  logger.debug("dependencies", deps);
+                  const deps = getSubstateDependencies(dependencies);
 
                   return ctx.tracker.wrapExecution(
                     handler,
@@ -435,35 +396,32 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
         (context) => {
           ctx = context;
         },
-      ) as CascadeIsolatedInitializer<T, A>;
+      ) as SubstateIsolatedInitializer<T, A>;
     },
-    isolatedUnsafe<T extends CascadeData, A extends CascadeArgs>(
+    isolatedUnsafe<T extends SubstateData, A extends SubstateArgs>(
       handler: (
         args: A,
-        dependencies: CascadeSubStoreSnapshotUnsafe<D>,
+        dependencies: SubstateSubStoreSnapshotUnsafe<D>,
       ) => T | Promise<T>,
     ) {
-      let ctx: CascadeFlowInitializerContext<CascadeData>;
-      const selectorsMap = new Map<string, CascadeSelector<CascadeData>>();
+      let ctx: SubstateFlowInitializerContext<SubstateData>;
+      const selectorsMap = new Map<string, SubstateSelector<SubstateData>>();
 
-      return createCascadeInitializer(
+      return createSubstateInitializer(
         (args: A) => {
           const argsKey = getArgsKey(args);
 
           if (!selectorsMap.has(argsKey)) {
-            const { logger, initialData, ...rest } = createBaseFlowContext(ctx);
+            const { initialData, ...rest } = createBaseFlowContext(ctx);
             selectorsMap.set(
               argsKey,
-              createCascadeSelectorFlow({
+              createSubstateSelectorFlow({
                 ...rest,
-                logger,
-                initialData: (initialData as Record<string, CascadeData>)?.[
+                initialData: (initialData as Record<string, SubstateData>)?.[
                   argsKey
                 ],
                 handler: async () => {
-                  const deps = getCascadeDependenciesUnsafe(dependencies);
-
-                  logger.debug("dependencies", deps);
+                  const deps = getSubstateDependenciesUnsafe(dependencies);
 
                   return ctx.tracker.wrapExecution(
                     handler,
@@ -480,7 +438,7 @@ export function createCascadeBuilderWithDependencies<D extends CascadeSubStore>(
         (context) => {
           ctx = context;
         },
-      ) as CascadeIsolatedInitializer<T, A>;
+      ) as SubstateIsolatedInitializer<T, A>;
     },
   };
 }

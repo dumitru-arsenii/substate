@@ -1,25 +1,25 @@
 import type {
-  CascacdeFlow,
-  CascadeFlowData,
-  CascadeFlowInitializer,
-  CascadeFlowInitializerContext,
+  SubstateFlow,
+  SubstateFlowData,
+  SubstateFlowInitializer,
+  SubstateFlowInitializerContext,
 } from "./types";
 
-export function createCascadeInitializer<F extends CascacdeFlow<any>>(
+export function createSubstateInitializer<F extends SubstateFlow<any>>(
   createFlow: (() => F) | ((args: any) => F),
   onInitialize: (
-    context: CascadeFlowInitializerContext<CascadeFlowData<F>>,
+    context: SubstateFlowInitializerContext<SubstateFlowData<F>>,
   ) => void,
-): CascadeFlowInitializer<CascadeFlowData<F>> {
+): SubstateFlowInitializer<SubstateFlowData<F>> {
   let initialized = false;
 
   return Object.assign(createFlow, {
     isInitialized() {
       return initialized;
     },
-    initialize(context: CascadeFlowInitializerContext<CascadeFlowData<F>>) {
+    initialize(context: SubstateFlowInitializerContext<SubstateFlowData<F>>) {
       initialized = true;
       onInitialize(context);
     },
-  }) as CascadeFlowInitializer<CascadeFlowData<F>>;
+  }) as SubstateFlowInitializer<SubstateFlowData<F>>;
 }

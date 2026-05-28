@@ -1,99 +1,65 @@
-import { BehaviorSubject, defer, Observable, shareReplay, tap } from "rxjs";
+import { BehaviorSubject, defer, Observable, shareReplay } from "rxjs";
 import type { Subscriber, Subscription } from "rxjs";
+import { listenSubstateDependencies } from "./dependencies";
 import {
-  getCascadeDependenciesUnsafe,
-  listenCascadeDependencies,
-} from "./dependencies";
-import {
-  makeCascadeFailureResult,
-  makeCascadeNonReadyResult,
-  makeCascadeSuccessResult,
+  makeSubstateFailureResult,
+  makeSubstateNonReadyResult,
+  makeSubstateSuccessResult,
 } from "./result";
 import type {
-  CascadeData,
-  CascadeResult,
-  CascadeSelector,
-  CascadeSelectorContext,
+  SubstateData,
+  SubstateResult,
+  SubstateSelector,
+  SubstateSelectorContext,
 } from "./types";
 import {
-  filterCascadeSuccessAndMapToData,
-  takeFirstCascadeSuccessData,
+  filterSubstateSuccessAndMapToData,
+  takeFirstSubstateSuccessData,
 } from "./utils";
 
-export function createCascadeSelectorFlow<T extends CascadeData>(
-  context: CascadeSelectorContext<T>,
-): CascadeSelector<T> {
-  const state = new BehaviorSubject<CascadeResult<T>>(
+export function createSubstateSelectorFlow<T extends SubstateData>(
+  context: SubstateSelectorContext<T>,
+): SubstateSelector<T> {
+  const state = new BehaviorSubject<SubstateResult<T>>(
     context.initialData
-      ? makeCascadeSuccessResult(context.initialData)
-      : makeCascadeNonReadyResult(),
+      ? makeSubstateSuccessResult(context.initialData)
+      : makeSubstateNonReadyResult(),
   );
 
   const resolve = async () => {
-    context.logger.debug("resolve started");
     try {
       const canResolve = context.filterFn();
 
-      context.logger.debug("can resolve", canResolve);
-
       if (canResolve) {
         const data = await context.handler();
-        context.logger.debug("resolve success", data);
-        state.next(makeCascadeSuccessResult(data));
-        context.logger.debug("resolve done");
+        state.next(makeSubstateSuccessResult(data));
       }
     } catch (error) {
-      context.logger.error("resolve error", error);
-      state.next(makeCascadeFailureResult(error));
+      state.next(makeSubstateFailureResult(error));
 
       throw error;
     }
   };
 
   let dependenciesSubscription: Subscription | undefined;
-  const subjectStream$ = state.asObservable().pipe(
-    tap((data) => {
-      context.logger.debug("result", data);
-    }),
-  );
+  const subjectStream$ = state.asObservable();
   const stream$ = defer(
     () =>
-      new Observable<CascadeResult<T>>(
-        (subscriber: Subscriber<CascadeResult<T>>) => {
+      new Observable<SubstateResult<T>>(
+        (subscriber: Subscriber<SubstateResult<T>>) => {
           const subscription = subjectStream$.subscribe(subscriber);
 
-          context.logger.debug("subscribe");
-
           if (!state.getValue().ready) {
-            context.logger.debug("initial resolve from subscribe");
-            void resolve().catch((error) => {
-              context.logger.debug(
-                "initial resolve rejected (state already updated)",
-                error,
-              );
-            });
+            void resolve().catch(() => {});
           }
 
-          dependenciesSubscription = listenCascadeDependencies(
+          dependenciesSubscription = listenSubstateDependencies(
             context.dependencies,
           ).subscribe(() => {
-            context.logger.debug(
-              "dependencies changed",
-              getCascadeDependenciesUnsafe(context.dependencies),
-            );
-            if (!state.getValue().ready) {
-              context.logger.debug("initial resolve from dependencies change");
-              void resolve().catch((error) => {
-                context.logger.debug(
-                  "dependencies resolve rejected (state already updated)",
-                  error,
-                );
-              });
-            }
+            void resolve().catch(() => {});
           });
 
           return () => {
-            context.logger.debug("unsubscribe");
             subscription.unsubscribe();
             dependenciesSubscription?.unsubscribe();
           };
@@ -103,26 +69,17 @@ export function createCascadeSelectorFlow<T extends CascadeData>(
 
   return {
     latest() {
-      context.logger.debug("latest accessed");
       return state.getValue();
     },
     async resolve() {
-      context.logger.debug("resolve triggered");
-
       await resolve();
 
-      return takeFirstCascadeSuccessData(state.asObservable());
+      return takeFirstSubstateSuccessData(state.asObservable());
     },
     data() {
-      context.logger.debug("data accessed");
-      return filterCascadeSuccessAndMapToData(stream$).pipe(
-        tap((data) => {
-          context.logger.debug("data", data);
-        }),
-      );
+      return filterSubstateSuccessAndMapToData(stream$);
     },
     stream() {
-      context.logger.debug("stream accessed");
       return stream$;
     },
   };

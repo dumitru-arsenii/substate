@@ -13,10 +13,10 @@ npm install @substate/core @substate/react react
 Create typed bindings for your store type:
 
 ```tsx
-import { createCascadeStore, createCascadeSubStore } from "@substate/core";
+import { createStore, createSubStore } from "@substate/core";
 import { createSubstateReact } from "@substate/react";
 
-const counter = createCascadeSubStore({}, (builder) => {
+const counter = createSubStore({}, (builder) => {
   const setCount = builder.mutation(async (args: { value: number }) => ({
     value: args.value,
   }));
@@ -30,7 +30,7 @@ const counter = createCascadeSubStore({}, (builder) => {
   return { setCount, doubled };
 });
 
-const store = createCascadeStore({ counter });
+const store = createStore({ counter });
 
 type AppStore = typeof store;
 

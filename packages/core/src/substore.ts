@@ -1,23 +1,23 @@
-import { createCascadeCleanBuilder } from "./builder";
+import { createSubstateCleanBuilder } from "./builder";
 import type {
-  CascadeCleanBuilder,
-  CascadeStoreSubStoresInitializers,
-  CascadeSubStore,
-  CascadeSubStoreFlowInitializers,
-  CascadeSubStoreInitializer,
-  CascadeSubStoreInitializerContext,
+  SubstateCleanBuilder,
+  SubstateStoreSubStoresInitializers,
+  SubstateSubStore,
+  SubstateSubStoreFlowInitializers,
+  SubstateSubStoreInitializer,
+  SubstateSubStoreInitializerContext,
 } from "./types";
 
-export function createCascadeSubStore<
-  S extends CascadeSubStore,
-  D extends CascadeStoreSubStoresInitializers,
+export function createSubStore<
+  S extends SubstateSubStore,
+  D extends SubstateStoreSubStoresInitializers,
 >(
   dependencies: D,
   factory: (
-    builder: CascadeCleanBuilder,
-    deps: CascadeSubStoreFlowInitializers<D>,
+    builder: SubstateCleanBuilder,
+    deps: SubstateSubStoreFlowInitializers<D>,
   ) => S,
-): CascadeSubStoreInitializer<S> {
+): SubstateSubStoreInitializer<S> {
   let substore: S;
   let isInitialized = false;
   const uuid = `${Math.random().toString(36).substring(2, 9)}--${Math.random()
@@ -28,17 +28,17 @@ export function createCascadeSubStore<
     isInitialized() {
       return isInitialized;
     },
-    initialize(context: CascadeSubStoreInitializerContext) {
+    initialize(context: SubstateSubStoreInitializerContext) {
       substore = Object.fromEntries(
         Object.entries(
           factory(
-            createCascadeCleanBuilder(),
+            createSubstateCleanBuilder(),
             Object.fromEntries(
               Object.entries(dependencies).map(([depKey, dep]) => [
                 depKey,
                 dep(),
               ]),
-            ) as CascadeSubStoreFlowInitializers<D>,
+            ) as SubstateSubStoreFlowInitializers<D>,
           ),
         ).map(([flowKey, flow]) => {
           if ("initialize" in flow) {

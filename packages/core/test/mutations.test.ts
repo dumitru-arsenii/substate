@@ -1,13 +1,13 @@
 import { firstValueFrom } from "rxjs";
 import { describe, expect, it } from "vitest";
-import { createCascadeStore, createCascadeSubStore } from "../src/index";
+import { createStore, createSubStore } from "../src/index";
 
-describe("cascade mutations", () => {
+describe("substate mutations", () => {
   it("only runs on args changes", async () => {
     let current = 1;
     const calls: Array<{ args: number; dep: number }> = [];
 
-    const storeDef = createCascadeSubStore({}, (builder) => {
+    const storeDef = createSubStore({}, (builder) => {
       const dep = builder.selector(async () => ({ current }));
       const mut = builder
         .withDependencies({ dep })
@@ -18,7 +18,7 @@ describe("cascade mutations", () => {
       return { dep, mut };
     });
 
-    const store = createCascadeStore({ storeDef });
+    const store = createStore({ storeDef });
     const dep = store.storeDef.dep();
     const mut = store.storeDef.mut();
 
@@ -33,7 +33,7 @@ describe("cascade mutations", () => {
   });
 
   it("captures errors without throwing", async () => {
-    const storeDef = createCascadeSubStore({}, (builder) => {
+    const storeDef = createSubStore({}, (builder) => {
       const mut = builder.mutation(async (): Promise<{}> => {
         console.trace("boom");
         throw new Error("boom");
@@ -41,7 +41,7 @@ describe("cascade mutations", () => {
       return { mut };
     });
 
-    const store = createCascadeStore({ storeDef });
+    const store = createStore({ storeDef });
     const mut = store.storeDef.mut();
 
     await expect(firstValueFrom(mut.stream())).resolves.toMatchObject({
@@ -59,8 +59,8 @@ describe("cascade mutations", () => {
     });
   });
 
-  it("cascades mutations across substores", async () => {
-    const base = createCascadeSubStore({}, (builder) => {
+  it("substates mutations across substores", async () => {
+    const base = createSubStore({}, (builder) => {
       const bump = builder.mutation(async (args: { amount: number }) => ({
         data: args.amount,
       }));
@@ -71,7 +71,7 @@ describe("cascade mutations", () => {
       return { bump, total };
     });
 
-    const derived = createCascadeSubStore({ base }, (builder, deps) => {
+    const derived = createSubStore({ base }, (builder, deps) => {
       const touch = builder
         .withDependencies({ total: deps.base.total })
         .mutation(async (_, deps) => ({
@@ -80,7 +80,7 @@ describe("cascade mutations", () => {
       return { touch };
     });
 
-    const store = createCascadeStore({ base, derived });
+    const store = createStore({ base, derived });
     await store.base.bump().run({ amount: 4 });
     await store.base.total().resolve();
     const result = await store.derived.touch().run({});

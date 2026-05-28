@@ -1,18 +1,20 @@
 import type {
-  CascadeData,
-  CascadeFailureResult,
-  CascadeNonReadyResult,
-  CascadeResult,
-  CascadeSuccessResult,
+  SubstateData,
+  SubstateFailureResult,
+  SubstateNonReadyResult,
+  SubstateResult,
+  SubstateSuccessResult,
 } from "./types";
 
-export function makeCascadeNonReadyResult(): CascadeNonReadyResult {
+export function makeSubstateNonReadyResult(): SubstateNonReadyResult {
   return {
     ready: false,
   };
 }
 
-export function makeCascadeFailureResult(erro: unknown): CascadeFailureResult {
+export function makeSubstateFailureResult(
+  erro: unknown,
+): SubstateFailureResult {
   return {
     ready: true,
     success: false,
@@ -20,9 +22,9 @@ export function makeCascadeFailureResult(erro: unknown): CascadeFailureResult {
   };
 }
 
-export function makeCascadeSuccessResult<T extends CascadeData>(
+export function makeSubstateSuccessResult<T extends SubstateData>(
   data: T,
-): CascadeSuccessResult<T> {
+): SubstateSuccessResult<T> {
   return {
     ready: true,
     success: true,
@@ -30,14 +32,14 @@ export function makeCascadeSuccessResult<T extends CascadeData>(
   };
 }
 
-export function makeCascadeResult<T extends CascadeData>(
+export function makeSubstateResult<T extends SubstateData>(
   input: { data: T } | { error: unknown } | {} = {},
-): CascadeResult<T> {
+): SubstateResult<T> {
   if ("data" in input) {
-    return makeCascadeSuccessResult(input.data);
+    return makeSubstateSuccessResult(input.data);
   }
   if ("error" in input) {
-    return makeCascadeFailureResult(input.error);
+    return makeSubstateFailureResult(input.error);
   }
-  return makeCascadeNonReadyResult();
+  return makeSubstateNonReadyResult();
 }

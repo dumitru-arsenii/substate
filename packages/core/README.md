@@ -18,9 +18,9 @@ npm install @substate/core
 ## Quick Start
 
 ```ts
-import { createCascadeStore, createCascadeSubStore } from "@substate/core";
+import { createStore, createSubStore } from "@substate/core";
 
-const counter = createCascadeSubStore({}, (builder) => {
+const counter = createSubStore({}, (builder) => {
   const setCount = builder.mutation(async (args: { value: number }) => ({
     value: args.value,
   }));
@@ -34,7 +34,7 @@ const counter = createCascadeSubStore({}, (builder) => {
   return { setCount, doubled };
 });
 
-const store = createCascadeStore({ counter });
+const store = createStore({ counter });
 
 await store.counter.setCount().run({ value: 2 });
 
@@ -45,7 +45,7 @@ console.log(result.value); // 4
 
 ## Core API
 
-### `createCascadeSubStore(dependencies, factory)`
+### `createSubStore(dependencies, factory)`
 
 Creates a substore definition. The factory receives a builder with methods for:
 
@@ -57,7 +57,7 @@ Creates a substore definition. The factory receives a builder with methods for:
 
 Substores can depend on other substores, and dependent flows can read ready dependency data through the builder.
 
-### `createCascadeStore(substores, snapshot?)`
+### `createStore(substores, snapshot?)`
 
 Initializes a store from substore definitions and optional snapshot data.
 
@@ -66,14 +66,13 @@ The returned store includes the initialized substores plus runtime helpers:
 - `isPending()`
 - `whenIdle()`
 - `getSnapshot()`
-- `setLogLevel(level)`
 
 ### Results
 
 Flow streams expose discriminated result objects:
 
 ```ts
-type CascadeResult<T> =
+type SubstateResult<T> =
   | { ready: false }
   | { ready: true; success: true; data: T }
   | { ready: true; success: false; error: unknown };

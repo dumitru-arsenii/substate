@@ -26,9 +26,9 @@ npm install @substate/core
 ## Quick Start
 
 ```ts
-import { createCascadeStore, createCascadeSubStore } from "@substate/core";
+import { createStore, createSubStore } from "@substate/core";
 
-const users = createCascadeSubStore({}, (builder) => {
+const users = createSubStore({}, (builder) => {
   const setUser = builder.mutation(
     async (args: { id: number; name: string }) => args,
   );
@@ -40,7 +40,7 @@ const users = createCascadeSubStore({}, (builder) => {
   return { setUser, currentUser };
 });
 
-const store = createCascadeStore({ users });
+const store = createStore({ users });
 
 await store.users.setUser().run({ id: 1, name: "Ada" });
 

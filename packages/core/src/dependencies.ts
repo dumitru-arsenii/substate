@@ -1,16 +1,16 @@
 import { combineLatest, map } from "rxjs";
 import type { Observable } from "rxjs";
 import type {
-  CascadeMutationInitializer,
-  CascadeSelectorInitializer,
-  CascadeSubscriptionInitializer,
-  CascadeSubStore,
-  CascadeSubStoreSnapshot,
-  CascadeSubStoreSnapshotUnsafe,
+  SubstateMutationInitializer,
+  SubstateSelectorInitializer,
+  SubstateSubscriptionInitializer,
+  SubstateSubStore,
+  SubstateSubStoreSnapshot,
+  SubstateSubStoreSnapshotUnsafe,
 } from "./types";
 
-export function throwIfCascadeDependenciesNotInitializedOrNotAllowed(
-  dependencies: CascadeSubStore,
+export function throwIfSubstateDependenciesNotInitializedOrNotAllowed(
+  dependencies: SubstateSubStore,
 ) {
   Object.entries(dependencies).find(([key, dependency]) => {
     if (!dependency.isInitialized()) {
@@ -27,18 +27,18 @@ export function throwIfCascadeDependenciesNotInitializedOrNotAllowed(
   });
 }
 
-export function listenCascadeDependencies(
-  dependencies: CascadeSubStore,
+export function listenSubstateDependencies(
+  dependencies: SubstateSubStore,
 ): Observable<void> {
-  throwIfCascadeDependenciesNotInitializedOrNotAllowed(dependencies);
+  throwIfSubstateDependenciesNotInitializedOrNotAllowed(dependencies);
 
   return combineLatest(
     Object.values(dependencies).map((dependency) => {
       return (
         dependency as
-          | CascadeSelectorInitializer<any>
-          | CascadeMutationInitializer<any, any>
-          | CascadeSubscriptionInitializer<any, any>
+          | SubstateSelectorInitializer<any>
+          | SubstateMutationInitializer<any, any>
+          | SubstateSubscriptionInitializer<any, any>
       )().stream();
     }),
   ).pipe(
@@ -48,36 +48,36 @@ export function listenCascadeDependencies(
   );
 }
 
-export function getCascadeDependenciesUnsafe<S extends CascadeSubStore>(
+export function getSubstateDependenciesUnsafe<S extends SubstateSubStore>(
   dependencies: S,
-): CascadeSubStoreSnapshotUnsafe<S> {
-  throwIfCascadeDependenciesNotInitializedOrNotAllowed(dependencies);
+): SubstateSubStoreSnapshotUnsafe<S> {
+  throwIfSubstateDependenciesNotInitializedOrNotAllowed(dependencies);
 
   return Object.fromEntries(
     Object.entries(dependencies).map(([key, dependency]) => [
       key,
       (
         dependency as
-          | CascadeSelectorInitializer<any>
-          | CascadeMutationInitializer<any, any>
-          | CascadeSubscriptionInitializer<any, any>
+          | SubstateSelectorInitializer<any>
+          | SubstateMutationInitializer<any, any>
+          | SubstateSubscriptionInitializer<any, any>
       )().latest(),
     ]),
-  ) as CascadeSubStoreSnapshotUnsafe<S>;
+  ) as SubstateSubStoreSnapshotUnsafe<S>;
 }
 
-export async function resolveCascadeDependencies(
-  dependencies: CascadeSubStore,
+export async function resolveSubstateDependencies(
+  dependencies: SubstateSubStore,
 ): Promise<void> {
-  throwIfCascadeDependenciesNotInitializedOrNotAllowed(dependencies);
+  throwIfSubstateDependenciesNotInitializedOrNotAllowed(dependencies);
 
   await Promise.all(
     Object.values(dependencies).map(async (dependency) => {
       const flow = (
         dependency as
-          | CascadeSelectorInitializer<any>
-          | CascadeMutationInitializer<any, any>
-          | CascadeSubscriptionInitializer<any, any>
+          | SubstateSelectorInitializer<any>
+          | SubstateMutationInitializer<any, any>
+          | SubstateSubscriptionInitializer<any, any>
       )();
 
       if ("resolve" in flow && !flow.latest().ready) {
@@ -87,9 +87,9 @@ export async function resolveCascadeDependencies(
   );
 }
 
-export function castCascadeDependenciesToData<S extends CascadeSubStore>(
-  dependencies: CascadeSubStoreSnapshotUnsafe<S>,
-): CascadeSubStoreSnapshot<S> {
+export function castSubstateDependenciesToData<S extends SubstateSubStore>(
+  dependencies: SubstateSubStoreSnapshotUnsafe<S>,
+): SubstateSubStoreSnapshot<S> {
   return Object.fromEntries(
     Object.entries(dependencies).map(([key, result]) => {
       if (!result.ready || !result.success) {
@@ -100,15 +100,15 @@ export function castCascadeDependenciesToData<S extends CascadeSubStore>(
 
       return [key, result.data];
     }),
-  ) as CascadeSubStoreSnapshot<S>;
+  ) as SubstateSubStoreSnapshot<S>;
 }
 
-export function getCascadeDependencies<S extends CascadeSubStore>(
+export function getSubstateDependencies<S extends SubstateSubStore>(
   dependencies: S,
-): CascadeSubStoreSnapshot<S> {
-  throwIfCascadeDependenciesNotInitializedOrNotAllowed(dependencies);
+): SubstateSubStoreSnapshot<S> {
+  throwIfSubstateDependenciesNotInitializedOrNotAllowed(dependencies);
 
-  return castCascadeDependenciesToData(
-    getCascadeDependenciesUnsafe(dependencies),
+  return castSubstateDependenciesToData(
+    getSubstateDependenciesUnsafe(dependencies),
   );
 }
