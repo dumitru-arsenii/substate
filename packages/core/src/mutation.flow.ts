@@ -13,6 +13,7 @@ import type {
 } from "./types";
 import {
   filterSubstateSuccessAndMapToData,
+  getSubstateSuccessDataOrThrow,
   takeFirstSubstateSuccessData,
 } from "./utils";
 
@@ -49,6 +50,9 @@ export function createSubstateMutationFlow<
     },
     latest() {
       return state.getValue();
+    },
+    value() {
+      return getSubstateSuccessDataOrThrow(state.getValue());
     },
     data() {
       return filterSubstateSuccessAndMapToData(state.asObservable());

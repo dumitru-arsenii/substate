@@ -12,7 +12,10 @@ import type {
   SubstateSubscription,
   SubstateSubscriptionContext,
 } from "./types";
-import { filterSubstateSuccessAndMapToData } from "./utils";
+import {
+  filterSubstateSuccessAndMapToData,
+  getSubstateSuccessDataOrThrow,
+} from "./utils";
 
 export function createSubstateSubscriptionFlow<
   T extends SubstateData,
@@ -66,6 +69,9 @@ export function createSubstateSubscriptionFlow<
     },
     latest() {
       return state.getValue();
+    },
+    value() {
+      return getSubstateSuccessDataOrThrow(state.getValue());
     },
     data() {
       return filterSubstateSuccessAndMapToData(state.asObservable());

@@ -215,6 +215,9 @@ describe("substate selectors", () => {
     ).toMatchObject({
       value: 5,
     });
+    expect(value.value()).toMatchObject({
+      value: 5,
+    });
 
     const piped = await firstValueFrom(value.stream());
     expect(piped.ready).toBe(true);
@@ -257,5 +260,35 @@ describe("substate selectors", () => {
       data: 2,
     });
     expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when reading a non-ready selector value", () => {
+    const storeDef = createSubStore({}, (builder) => {
+      const value = builder.selector(async () => ({ value: 5 }));
+      return { value };
+    });
+
+    const store = createStore({ storeDef });
+
+    expect(() => store.storeDef.value().value()).toThrow(
+      "Substate flow is not ready",
+    );
+  });
+
+  it("throws selector errors when reading failed values", async () => {
+    const error = new Error("boom");
+    const storeDef = createSubStore({}, (builder) => {
+      const value = builder.selector(async () => {
+        throw error;
+        return { value: 5 };
+      });
+      return { value };
+    });
+
+    const store = createStore({ storeDef });
+    const value = store.storeDef.value();
+
+    await expect(value.resolve()).rejects.toThrow(error);
+    expect(() => value.value()).toThrow(error);
   });
 });

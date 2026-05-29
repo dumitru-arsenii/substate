@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import {
   filterSubstateSuccessAndMapToData,
+  getSubstateSuccessDataOrThrow,
   takeFirstSubstateSuccessData,
 } from "./utils";
 
@@ -72,6 +73,9 @@ export function createSubstateSelectorFlow<T extends SubstateData>(
   return {
     latest() {
       return state.getValue();
+    },
+    value() {
+      return getSubstateSuccessDataOrThrow(state.getValue());
     },
     async resolve() {
       await resolve();

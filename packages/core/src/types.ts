@@ -22,6 +22,7 @@ export type SubstateResult<T extends SubstateData> =
 
 export type SubstateBaseFlow<T extends SubstateData> = {
   latest(): SubstateResult<T>;
+  value(): T;
   data(): Observable<T>;
   stream(): Observable<SubstateResult<T>>;
 };

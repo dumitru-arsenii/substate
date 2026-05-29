@@ -33,6 +33,20 @@ export function takeFirstSubstateSuccessData<T extends SubstateData>(
   return firstValueFrom(filterSubstateSuccessAndMapToData(strea));
 }
 
+export function getSubstateSuccessDataOrThrow<T extends SubstateData>(
+  result: SubstateResult<T>,
+): T {
+  if (!result.ready) {
+    throw new Error("Substate flow is not ready");
+  }
+
+  if (!result.success) {
+    throw result.error;
+  }
+
+  return result.data;
+}
+
 type DepsTree = {
   key: string;
   id: string;
